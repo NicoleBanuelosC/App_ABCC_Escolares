@@ -26,7 +26,6 @@
       <div class="row justify-content-center">
           <div class="col-md-9">
               <div class="card shadow border-0 rounded-4">
-                  <!-- Cabecera elegante en tono amarillo/advertencia para edición -->
                   <div class="card-header bg-warning text-dark text-center py-3 rounded-top-4">
                       <h4 class="mb-0 fw-bold">Modificar Datos del Alumno</h4>
                   </div>
@@ -88,7 +87,6 @@
                               </div>
                           </div>
 
-                          <!-- Botones con estilo moderno -->
                           <div class="d-flex justify-content-end gap-2 mt-4">
                               <a href="bajas_cambios.php" class="btn btn-outline-secondary px-4 rounded-pill">Cancelar</a>
                               <button type="submit" class="btn btn-success px-4 rounded-pill shadow-sm">Guardar Cambios</button>
