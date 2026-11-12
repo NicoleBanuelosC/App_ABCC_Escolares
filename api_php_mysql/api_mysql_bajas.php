@@ -1,43 +1,69 @@
 <?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: DELETE');
+header('Access-Control-Allow-Headers: Content-Type');
 
-    include_once('../backend/config/database/conexion_mysql_escuela.php');
+require_once(__DIR__ . '/../backend/models/alumno_model.php');
 
-    $con = new ConexionBDEscuela();
-    $conexion = $con->getConexion();
-
-    if($_SERVER['REQUEST_METHOD'] == 'POST'){
-
-        $cadenaJSON = file_get_contents('php://input');
-
-        if(!$cadenaJSON){
-            echo "no hay cadena JSON";
-        } else {
-            $datos = json_decode($cadenaJSON, true);
+class BajasAPI {
+    private $modelo;
+    
+    public function __construct() {
+        $this->modelo = new AlumnoModel();
+    }
+    
+    public function manejarPeticion() {
+        // validar que el metodo sea delete
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Método no permitido. Use DELETE para dar de baja.']);
+            return;
+        }
+        
+        try {
+            $nc = null;
             
-            $nc = isset($datos['nc']) ? $datos['nc'] : '';
-            $n = isset($datos['n']) ? $datos['n'] : ''; // nombre
-
-
-            $sql = "DELETE FROM Alumnos WHERE Num_Control = '$nc' OR nombre = '$n'";
-
-            $res = mysqli_query($conexion, $sql);
-
-            $respuesta = array();
-            if($res){
-                if(mysqli_affected_rows($conexion) > 0){
-                    $respuesta['baja'] = true;
-                    $respuesta['mensaje'] = "Alumno eliminado correctamente.";
-                } else {
-                    $respuesta['baja'] = false;
-                    $respuesta['mensaje'] = "No se encontró ningún alumno con esos datos.";
-                }
+            // 2. Buscar el número de control en la URL (?nc=...) o en el cuerpo JSON
+            if (isset($_GET['nc'])) {
+                $nc = $_GET['nc'];
             } else {
-                $respuesta['baja'] = false;
-                $respuesta['mensaje'] = "Error en la consulta SQL.";
+                $datos = json_decode(file_get_contents('php://input'), true);
+                if (isset($datos['nc'])) {
+                    $nc = $datos['nc'];
+                }
             }
-
-            echo json_encode($respuesta);
+            
+            // 3. validar que se haya puesto el numero de control
+            if (!$nc) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Se requiere el número de control (nc) para eliminar.']);
+                return;
+            }
+            
+            // ejecutar la eliminacion
+            if ($this->modelo->eliminarAlumno($nc)) {
+                http_response_code(200);
+                echo json_encode([
+                    'baja' => true,
+                    'mensaje' => 'Alumno eliminado correctamente.',
+                    'nc' => $nc
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'baja' => false,
+                    'mensaje' => 'No se encontró ningún alumno con ese número de control.'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error en el servidor: ' . $e->getMessage()]);
         }
     }
+}
 
+$api = new BajasAPI();
+$api->manejarPeticion();
 ?>
